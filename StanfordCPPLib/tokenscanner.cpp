@@ -5,56 +5,69 @@
  */
 
 #include <cctype>
-#include <iostream>
-#include "error.h"
-#include "tokenscanner.h"
-#include "strlib.h"
-#include "stack.h"
+#include "error.hpp"
+#include "tokenScanner.hpp"
+#include "strlib.hpp"
 
-using namespace std;
 
 TokenScanner::TokenScanner() {
     initScanner();
     setInput("");
 }
 
-TokenScanner::TokenScanner(string str) {
+TokenScanner::TokenScanner(std::string str) {
     initScanner();
     setInput(str);
 }
 
-TokenScanner::TokenScanner(istream &infile) {
+TokenScanner::TokenScanner(std::istream &infile) {
     initScanner();
     setInput(infile);
 }
 
 TokenScanner::~TokenScanner() {
-    if (stringInputFlag) delete isp;
+    delete isp;
+    //delete savedTokens chain
+    StringCell *pre = savedTokens;
+    while (savedTokens) {
+        savedTokens = savedTokens->link;
+        delete pre;
+        pre = savedTokens;
+    }
+    //delete operators chain
+    StringCell *p = operators;
+    while (operators) {
+        operators = operators->link;
+        delete p;
+        p = operators;
+    }
 }
 
-void TokenScanner::setInput(string str) {
-    stringInputFlag = true;
+void TokenScanner::setInput(std::string str) {
     buffer = str;
-    isp = new istringstream(buffer);
-    savedTokens = NULL;
+    if (isp != nullptr) delete isp;
+    isp = new std::istringstream(buffer);
+    delete savedTokens;
+    savedTokens = nullptr;
 }
 
-void TokenScanner::setInput(istream &infile) {
-    stringInputFlag = false;
+void TokenScanner::setInput(std::istream &infile) {
+    if (isp != nullptr)delete isp;
     isp = &infile;
-    savedTokens = NULL;
+    delete savedTokens;
+    savedTokens = nullptr;
 }
 
 bool TokenScanner::hasMoreTokens() {
-    string token = nextToken();
+    std::string token = nextToken();
     saveToken(token);
     return (token != "");
 }
 
-string TokenScanner::nextToken() {
-    if (savedTokens != NULL) {
+std::string TokenScanner::nextToken() {
+    if (savedTokens != nullptr) {
         StringCell *cp = savedTokens;
-        string token = cp->str;
+        std::string token = cp->str;
         savedTokens = cp->link;
         delete cp;
         return token;
@@ -95,7 +108,7 @@ string TokenScanner::nextToken() {
             isp->unget();
             return scanWord();
         }
-        string op = string(1, ch);
+        std::string op = std::string(1, ch);
         while (isOperatorPrefix(op)) {
             ch = isp->get();
             if (ch == EOF) break;
@@ -109,7 +122,7 @@ string TokenScanner::nextToken() {
     }
 }
 
-void TokenScanner::saveToken(string token) {
+void TokenScanner::saveToken(std::string token) {
     StringCell *cp = new StringCell;
     cp->str = token;
     cp->link = savedTokens;
@@ -132,11 +145,11 @@ void TokenScanner::scanStrings() {
     scanStringsFlag = true;
 }
 
-void TokenScanner::addWordCharacters(string str) {
+void TokenScanner::addWordCharacters(std::string str) {
     wordChars += str;
 }
 
-void TokenScanner::addOperator(string op) {
+void TokenScanner::addOperator(std::string op) {
     StringCell *cp = new StringCell;
     cp->str = op;
     cp->link = operators;
@@ -144,7 +157,7 @@ void TokenScanner::addOperator(string op) {
 }
 
 int TokenScanner::getPosition() const {
-    if (savedTokens == NULL) {
+    if (savedTokens == nullptr) {
         return int(isp->tellg());
     } else {
         return int(isp->tellg()) - savedTokens->str.length();
@@ -153,19 +166,19 @@ int TokenScanner::getPosition() const {
 }
 
 bool TokenScanner::isWordCharacter(char ch) const {
-    return isalnum(ch) || wordChars.find(ch) != string::npos;
+    return isalnum(ch) || wordChars.find(ch) != std::string::npos;
 };
 
-void TokenScanner::verifyToken(string expected) {
-    string token = nextToken();
+void TokenScanner::verifyToken(std::string expected) {
+    std::string token = nextToken();
     if (token != expected) {
-        string msg = "Found \"" + token + "\"" +
-                     " when expecting \"" + expected + "\"";
+        std::string msg = "Found \"" + token + "\"" +
+                          " when expecting \"" + expected + "\"";
         error(msg);
     }
 };
 
-TokenType TokenScanner::getTokenType(string token) const {
+TokenType TokenScanner::getTokenType(std::string token) const {
     if (token == "") return TokenType(EOF);
     char ch = token[0];
     if (isspace(ch)) return SEPARATOR;
@@ -175,8 +188,8 @@ TokenType TokenScanner::getTokenType(string token) const {
     return OPERATOR;
 };
 
-string TokenScanner::getStringValue(string token) const {
-    string str = "";
+std::string TokenScanner::getStringValue(std::string token) const {
+    std::string str = "";
     int start = 0;
     int finish = token.length();
     if (finish > 1 && (token[0] == '"' || token[0] == '\'')) {
@@ -260,12 +273,25 @@ void TokenScanner::ungetChar(int ch) {
 
 /* Private methods */
 
+std::string TokenScanner::getRemainingInput() {
+    std::string remainingInput;
+
+    // 继续获取所有剩余的 token，把它们拼起来
+    while (hasMoreTokens()) {
+        remainingInput += nextToken();
+        if (hasMoreTokens()) {
+            remainingInput += " ";  // 加一个空格,保持原始输入的结构
+        }
+    }
+    return remainingInput;
+}
+
 void TokenScanner::initScanner() {
     ignoreWhitespaceFlag = false;
     ignoreCommentsFlag = false;
     scanNumbersFlag = false;
     scanStringsFlag = false;
-    operators = NULL;
+    operators = nullptr;
 }
 
 /*
@@ -293,8 +319,8 @@ void TokenScanner::skipSpaces() {
  * of word characters.
  */
 
-string TokenScanner::scanWord() {
-    string token = "";
+std::string TokenScanner::scanWord() {
+    std::string token = "";
     while (true) {
         int ch = isp->get();
         if (ch == EOF) break;
@@ -317,8 +343,8 @@ string TokenScanner::scanWord() {
  * determine what characters would be legal at this point in time.
  */
 
-string TokenScanner::scanNumber() {
-    string token = "";
+std::string TokenScanner::scanNumber() {
+    std::string token = "";
     NumberScannerState state = INITIAL_STATE;
     while (state != FINAL_STATE) {
         int ch = isp->get();
@@ -396,8 +422,8 @@ string TokenScanner::scanNumber() {
  * there is no closing quotation mark before the end of the input.
  */
 
-string TokenScanner::scanString() {
-    string token = "";
+std::string TokenScanner::scanString() {
+    std::string token = "";
     char delim = isp->get();
     token += delim;
     bool escape = false;
@@ -420,15 +446,15 @@ string TokenScanner::scanString() {
  * efficient by implementing operators as a trie.
  */
 
-bool TokenScanner::isOperator(string op) {
-    for (StringCell *cp = operators; cp != NULL; cp = cp->link) {
+bool TokenScanner::isOperator(std::string op) {
+    for (StringCell *cp = operators; cp != nullptr; cp = cp->link) {
         if (op == cp->str) return true;
     }
     return false;
 }
 
-bool TokenScanner::isOperatorPrefix(string op) {
-    for (StringCell *cp = operators; cp != NULL; cp = cp->link) {
+bool TokenScanner::isOperatorPrefix(std::string op) {
+    for (StringCell *cp = operators; cp != nullptr; cp = cp->link) {
         if (startsWith(cp->str, op)) return true;
     }
     return false;
