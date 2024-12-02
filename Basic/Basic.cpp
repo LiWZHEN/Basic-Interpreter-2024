@@ -180,8 +180,17 @@ void processLine(std::string line, Program &program, EvalState &state) {
 
             // 立即执行命令
             if (stmt != nullptr) {
-                stmt->execute(state, program);
-                delete stmt; // 删除立即执行的语句，避免内存泄漏
+                bool erased = false;
+                try {
+                    stmt->execute(state, program);
+                } catch (ErrorException &ex) {
+                    std::cout << ex.getMessage() << std::endl;
+                    delete stmt;
+                    erased = true;
+                }
+                if (!erased) {
+                    delete stmt; // 删除立即执行的语句，避免内存泄漏
+                }
             }
         }
     }
