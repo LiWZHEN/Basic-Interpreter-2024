@@ -121,10 +121,10 @@ private:
 
 class InputStatement : public Statement {
 public:
-    explicit InputStatement(const std::string &var) {
-        variable = var;
-    }
+    explicit InputStatement(const std::string &var) : variable(var) {}
+
     ~InputStatement() override = default;
+
     void execute(EvalState &state, Program &program) override {
         int value;
         std::string input;
@@ -133,24 +133,16 @@ public:
             std::cout << " ? ";
             getline(std::cin, input);
 
-            // 使用 TokenScanner 来解析输入的表达式
-            TokenScanner scanner;
-            scanner.ignoreWhitespace();
-            scanner.scanNumbers();
-            scanner.setInput(input);
-
-            try {
-                Expression* exp = parseExp(scanner);
-                value = exp->eval(state); // 计算表达式的值
-                if (scanner.hasMoreTokens()) {
-                    throw ErrorException("SYNTAX ERROR");
-                } // 有多余的东西
-                delete exp; // 清理内存
-                state.setValue(variable, value);
-                break;
-            } catch (ErrorException &ex) {
-                std::cout << "INVALID NUMBER" << std::endl;
+            // 尝试转换输入为整数类型
+            std::istringstream iss(input);
+            if (iss >> value) {
+                if (iss.eof()) {  // 确保输入只包含一个整数，没有其他多余的内容
+                    state.setValue(variable, value);
+                    break;
+                }
             }
+            std::cout << "INVALID NUMBER" << std::endl; // 如果输入不合法，提示用户重新输入
+            iss.clear(); // 重置输入流，清除错误状态
         }
     }
 
