@@ -157,6 +157,9 @@ void processLine(std::string line, Program &program, EvalState &state) {
                 exit(0);
             } else if (token == "LET") {
                 const std::string var = scanner.nextToken();
+                if (var == "REM" || var == "LET" || var == "PRINT" || var == "INPUT" || var == "END" || var == "GOTO" || var == "IF" || var == "THEN" || var == "RUN" || var == "LIST" || var == "CLEAR" || var == "QUIT" || var == "HELP") {
+                    error("SYNTAX ERROR");
+                }
                 if (scanner.nextToken() != "=") {
                     error("SYNTAX ERROR");
                 }
@@ -212,7 +215,7 @@ void runProgram(Program &program, EvalState &state) {
 void listProgram(Program &program) {
     int lineNumber = program.getFirstLineNumber();
     while (lineNumber != -1) {
-        std::cout << lineNumber << " " << program.getSourceLine(lineNumber) << std::endl;
+        std::cout << program.getSourceLine(lineNumber) << std::endl;
         lineNumber = program.getNextLineNumber(lineNumber);
     }
 }
