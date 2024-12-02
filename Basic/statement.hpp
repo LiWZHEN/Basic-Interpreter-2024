@@ -85,4 +85,158 @@ public:
  * specify its own destructor method to free that memory.
  */
 
+class LetStatement : public Statement {
+public:
+    LetStatement(const std::string &var, Expression *exp) {
+        variable = var;
+        this->exp = exp;
+    }
+    ~LetStatement() override {
+        delete exp;
+    }
+    void execute(EvalState &state, Program &program) override {
+        const int value = exp->eval(state); // 计算表达式的值
+        state.setValue(variable, value); // 把结果存到state里
+    }
+private:
+    std::string variable; // 存放要修改/定义的变量名
+    Expression *exp; // 存放表达式
+};
+
+class PrintStatement : public Statement {
+public:
+    explicit PrintStatement(Expression *exp) {
+        this->exp = exp;
+    }
+    ~PrintStatement() override {
+        delete exp;
+    }
+    void execute(EvalState &state, Program &program) override {
+        const int value = exp->eval(state);
+        std::cout << value << std::endl;
+    }
+private:
+    Expression *exp;
+};
+
+class InputStatement : public Statement {
+public:
+    explicit InputStatement(const std::string &var) {
+        variable = var;
+    }
+    ~InputStatement() override = default;
+    void execute(EvalState &state, Program &program) override {
+        int value;
+        std::string input;
+
+        while (true) {
+            std::cout << " ? ";
+            getline(std::cin, input);
+
+            // 使用 TokenScanner 来解析输入的表达式
+            TokenScanner scanner;
+            scanner.ignoreWhitespace();
+            scanner.scanNumbers();
+            scanner.setInput(input);
+
+            try {
+                Expression* exp = parseExp(scanner);
+                value = exp->eval(state); // 计算表达式的值
+                if (scanner.hasMoreTokens()) {
+                    throw ErrorException("SYNTAX ERROR");
+                } // 有多余的东西
+                delete exp; // 清理内存
+                break;
+            } catch (ErrorException &ex) {
+                std::cout << "INVALID NUMBER" << std::endl;
+            }
+            state.setValue(variable, value);
+        }
+    }
+
+private:
+    std::string variable;
+};
+
+class RemStatement : public Statement {
+public:
+    explicit RemStatement(const std::string &text) {
+        commentText = text;
+    }
+    ~RemStatement() override = default;
+
+    void execute(EvalState &state, Program &program) override {} // 啥也不干
+
+private:
+    std::string commentText; // 仅用于存储注释内容
+};
+
+class GotoStatement : public Statement {
+public:
+    explicit GotoStatement(const int lineNumber) {
+        targetLine = lineNumber;
+    }
+    ~GotoStatement() override = default;
+
+    void execute(EvalState &state, Program &program) override {}
+
+    [[nodiscard]] int getTargetLine() const {
+        return targetLine;
+    }
+
+private:
+    int targetLine;
+};
+
+class IfStatement : public Statement {
+public:
+    IfStatement(Expression *lhs, const std::string &op, Expression *rhs, const int targetLine) {
+        this->lhs = lhs;
+        this->op = op;
+        this->rhs = rhs;
+        this->targetLine = targetLine;
+    }
+
+    ~IfStatement() override {
+        delete lhs;
+        delete rhs;
+    }
+
+    void execute(EvalState &state, Program &program) override {}
+
+    bool isConditionTrue(EvalState &state) const {
+        const int leftValue = lhs->eval(state);
+        const int rightValue = rhs->eval(state);
+        if (op == "=") {
+            return leftValue == rightValue;
+        } else if (op == "<") {
+            return leftValue < rightValue;
+        } else if (op == ">") {
+            return leftValue > rightValue;
+        } else {
+            error("SYNTAX ERROR");
+            return false;
+        }
+
+    }
+
+    [[nodiscard]] int getTargetLine() const {
+        return targetLine;
+    }
+
+private:
+    Expression *lhs;
+    std::string op;
+    Expression *rhs;
+    int targetLine;
+};
+
+class EndStatement : public Statement {
+public:
+    EndStatement() = default;
+    ~EndStatement() override = default;
+    void execute(EvalState &state, Program &program) override {}
+private:
+};
+
 #endif
