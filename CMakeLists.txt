@@ -12,4 +12,4 @@ add_executable(code
         Basic/statement.cpp
         Basic/Utils/error.cpp Basic/Utils/error.hpp Basic/Utils/tokenScanner.cpp Basic/Utils/tokenScanner.hpp
         Basic/Utils/strlib.cpp
-        )
+)
