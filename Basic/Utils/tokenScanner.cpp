@@ -273,6 +273,19 @@ void TokenScanner::ungetChar(int ch) {
 
 /* Private methods */
 
+std::string TokenScanner::getRemainingInput() {
+    std::string remainingInput;
+
+    // 继续获取所有剩余的 token，把它们拼起来
+    while (hasMoreTokens()) {
+        remainingInput += nextToken();
+        if (hasMoreTokens()) {
+            remainingInput += " ";  // 加一个空格,保持原始输入的结构
+        }
+    }
+    return remainingInput;
+}
+
 void TokenScanner::initScanner() {
     ignoreWhitespaceFlag = false;
     ignoreCommentsFlag = false;
