@@ -235,7 +235,9 @@ class EndStatement : public Statement {
 public:
     EndStatement() = default;
     ~EndStatement() override = default;
-    void execute(EvalState &state, Program &program) override {}
+    void execute(EvalState &state, Program &program) override {
+        exit(0);
+    }
 private:
 };
 
