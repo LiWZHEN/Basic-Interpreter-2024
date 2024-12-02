@@ -131,7 +131,7 @@ void processLine(std::string line, Program &program, EvalState &state) {
                         error("SYNTAX ERROR");
                     } // 多了不该有的
                     stmt = new IfStatement(lhs, op, rhs, targetLine);
-                } else if (stmtToken == "EXIT") {
+                } else if (stmtToken == "END") {
                     stmt = new EndStatement();
                 } else {
                     error("SYNTAX ERROR");
