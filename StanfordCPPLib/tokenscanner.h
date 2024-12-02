@@ -1,3 +1,12 @@
+//
+// Created by 郭俊贤 on 2022/11/12.
+// Revised by Yanheng He and Guanjie Wang on 2023/11/15.
+//
+
+#ifndef CODE_TOKENSCANNER_HPP
+#define CODE_TOKENSCANNER_HPP
+
+
 /*
  * File: tokenscanner.h
  * --------------------
@@ -5,12 +14,9 @@
  * a string into individual logical units called <b><i>tokens</i></b>.
  */
 
-#ifndef _tokenscanner_h
-#define _tokenscanner_h
-
 #include <iostream>
 #include <string>
-#include "private/tokenpatch.h"
+#include <sstream>
 
 /*
  * Type: TokenType
@@ -297,6 +303,7 @@ public:
 /* Note: Everything below this point in the file is logically part    */
 /* of the implementation and should not be of interest to clients.    */
 /**********************************************************************/
+    std::string getRemainingInput();
 
 private:
 
@@ -326,15 +333,14 @@ private:
     };
 
     std::string buffer;              /* The original argument string */
-    std::istream *isp;               /* The input stream for tokens  */
-    bool stringInputFlag;            /* Flag indicating string input */
+    std::istream *isp = nullptr;     /* The input stream for tokens  */
     bool ignoreWhitespaceFlag;       /* Scanner ignores whitespace   */
     bool ignoreCommentsFlag;         /* Scanner ignores comments     */
     bool scanNumbersFlag;            /* Scanner parses numbers       */
     bool scanStringsFlag;            /* Scanner parses strings       */
     std::string wordChars;           /* Additional word characters   */
-    StringCell *savedTokens;         /* Stack of saved tokens        */
-    StringCell *operators;           /* List of multichar operators  */
+    StringCell *savedTokens = nullptr;         /* Stack of saved tokens        */
+    StringCell *operators = nullptr;           /* List of multichar operators  */
 
 /* Private method prototypes */
 
@@ -354,4 +360,4 @@ private:
 
 };
 
-#endif
+#endif //CODE_TOKENSCANNER_HPP
