@@ -146,11 +146,11 @@ public:
                     throw ErrorException("SYNTAX ERROR");
                 } // 有多余的东西
                 delete exp; // 清理内存
+                state.setValue(variable, value);
                 break;
             } catch (ErrorException &ex) {
                 std::cout << "INVALID NUMBER" << std::endl;
             }
-            state.setValue(variable, value);
         }
     }
 
