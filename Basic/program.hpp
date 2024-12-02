@@ -8,6 +8,8 @@
 #ifndef _program_h
 #define _program_h
 
+#include <climits>
+#include <cstdint>
 #include <string>
 #include <vector>
 #include <set>
@@ -72,7 +74,7 @@ public:
  * program in the correct sequence.
  */
 
-    void addSourceLine(int lineNumber, const std::string& line);
+    void addSourceLine(int lineNumber, const std::string &line);
 
 /*
  * Method: removeSourceLine
@@ -119,6 +121,7 @@ public:
 
     Statement *getParsedStatement(int lineNumber);
 
+
 /*
  * Method: getFirstLineNumber
  * Usage: int lineNumber = program.getFirstLineNumber();
@@ -142,11 +145,22 @@ public:
 
     //more func to add
     //todo
+    void AddTimes(int lineNumber);
 
 private:
 
     // Fill this in with whatever types and instance variables you need
     //todo
+    std::unordered_map<int, std::string> info;
+    std::unordered_map<int, Statement*> storage;
+    std::unordered_map<int, uint64_t> executionCount; // 存储每个行号的执行次数
+
+    void deleteParsedStatement(int lineNumber) {
+        if (storage.find(lineNumber) != storage.end()) {
+            delete storage[lineNumber];
+            storage.erase(lineNumber);
+        }
+    }
 };
 
 #endif
