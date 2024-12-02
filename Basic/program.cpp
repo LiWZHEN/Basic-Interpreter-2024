@@ -105,7 +105,7 @@ int Program::getNextLineNumber(int lineNumber) {
 
 void Program::AddTimes(int lineNumber) {
     ++executionCount[lineNumber];
-    if (executionCount[lineNumber] >= 4294967295) {
+    if (executionCount[lineNumber] >= 1000) {
         error("SYNTAX ERROR");
         exit(1);
     }
