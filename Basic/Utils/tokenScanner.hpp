@@ -303,6 +303,7 @@ public:
 /* Note: Everything below this point in the file is logically part    */
 /* of the implementation and should not be of interest to clients.    */
 /**********************************************************************/
+    std::string getRemainingInput();
 
 private:
 
