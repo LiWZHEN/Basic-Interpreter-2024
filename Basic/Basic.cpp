@@ -93,9 +93,9 @@ void processLine(std::string line, Program &program, EvalState &state) {
                         error("SYNTAX ERROR");
                     } // 缺目标行
                     int targetLine = stringToInteger(scanner.nextToken());
-                    if (program.getSourceLine(targetLine) == "") {
+                    /*if (program.getSourceLine(targetLine) == "") {
                         error("LINE NUMBER ERROR");
-                    } // 目标行错误
+                    } // 目标行错误*/
                     if (scanner.hasMoreTokens()) {
                         error("SYNTAX ERROR");
                     } // 多了不该有的
@@ -104,33 +104,28 @@ void processLine(std::string line, Program &program, EvalState &state) {
                     if (!scanner.hasMoreTokens()) {
                         error("SYNTAX ERROR");
                     } // 缺表达式
-                    Expression *lhs = readE(scanner);
-                    if (!scanner.hasMoreTokens()) {
-                        error("SYNTAX ERROR");
-                    } // 缺符号
-                    std::string op = scanner.nextToken();
-                    if (op != "<" && op != "=" && op != ">") {
-                        error("SYNTAX ERROR");
-                    } // 符号不对
-                    if (!scanner.hasMoreTokens()) {
-                        error("SYNTAX ERROR");
-                    } // 符号后缺数
-                    Expression *rhs = readE(scanner);
-                    if (!scanner.hasMoreTokens()) {
-                        error("SYNTAX ERROR");
-                    } // 缺跳转
-                    scanner.verifyToken("THEN");
-                    if (!scanner.hasMoreTokens()) {
-                        error("SYNTAX ERROR");
-                    } // 缺目标行
-                    int targetLine = stringToInteger(scanner.nextToken());
-                    if (program.getSourceLine(targetLine) == "") {
-                        error("LINE NUMBER ERROR");
-                    } // 目标行错误
-                    if (scanner.hasMoreTokens()) {
-                        error("SYNTAX ERROR");
-                    } // 多了不该有的
-                    stmt = new IfStatement(lhs, op, rhs, targetLine);
+                    Expression *exp = nullptr;
+                    try {
+                        exp = readE(scanner);
+                        if (!scanner.hasMoreTokens()) {
+                            error("SYNTAX ERROR");
+                        } // 缺跳转
+                        auto *tmp = dynamic_cast<CompoundExp *>(exp);
+                        std::string op = tmp->getOp();
+                        Expression *lhs = tmp->getLHS();
+                        Expression *rhs = tmp->getRHS();
+                        scanner.verifyToken("THEN");
+                        if (!scanner.hasMoreTokens()) {
+                            error("SYNTAX ERROR");
+                        } // 缺目标行
+                        int targetLine = stringToInteger(scanner.nextToken());
+                        if (scanner.hasMoreTokens()) {
+                            error("SYNTAX ERROR");
+                        } // 多了不该有的
+                        stmt = new IfStatement(lhs, op, rhs, targetLine);
+                    } catch (ErrorException &ex) {
+                        delete exp;
+                    }
                 } else if (stmtToken == "END") {
                     stmt = new EndStatement();
                 } else {
@@ -199,24 +194,35 @@ void processLine(std::string line, Program &program, EvalState &state) {
 
 void runProgram(Program &program, EvalState &state) {
     int lineNumber = program.getFirstLineNumber();
+    bool interrupt = false;
     while (lineNumber != -1) {
         Statement *stmt = program.getParsedStatement(lineNumber);
         if (stmt != nullptr) {
             program.AddTimes(lineNumber);
             if (const auto *gotoStmt = dynamic_cast<GotoStatement*>(stmt)) { // stmt是GotoStatement类型的
+                interrupt = true;
                 lineNumber = gotoStmt->getTargetLine();
             } else if (const auto *ifStmt = dynamic_cast<IfStatement*>(stmt)) { // stmt是IfStatement类型的
                 if (ifStmt->isConditionTrue(state)) {
+                    interrupt = false;
                     lineNumber = ifStmt->getTargetLine();
                 } else {
+                    interrupt = true;
                     lineNumber = program.getNextLineNumber(lineNumber);
                 }
             } else if (dynamic_cast<EndStatement*>(stmt)) { // stmt是EndStatement类型的
+                interrupt = false;
                 lineNumber = -1;
             } else { // 其他，正常转移
+                interrupt = false;
                 stmt->execute(state, program);
                 lineNumber = program.getNextLineNumber(lineNumber);
             }
+        } else {
+            if (interrupt) {
+                std::cout << "LINE NUMBER ERROR" << std::endl;
+            }
+            break;
         }
     }
 }
