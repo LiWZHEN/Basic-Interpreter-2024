@@ -103,28 +103,35 @@ void processLine(std::string line, Program &program, EvalState &state) {
                 } else if (stmtToken == "IF") {
                     if (!scanner.hasMoreTokens()) {
                         error("SYNTAX ERROR");
-                    } // 缺表达式
-                    Expression *exp = nullptr;
+                    }
+                    Expression *lhs = nullptr;
+                    Expression *rhs = nullptr;
                     try {
-                        exp = readE(scanner);
+                        lhs = readE(scanner);
                         if (!scanner.hasMoreTokens()) {
                             error("SYNTAX ERROR");
-                        } // 缺跳转
-                        auto *tmp = dynamic_cast<CompoundExp *>(exp);
-                        std::string op = tmp->getOp();
-                        Expression *lhs = tmp->getLHS();
-                        Expression *rhs = tmp->getRHS();
+                        }
+                        std::string op = scanner.nextToken();
+                        if (op != "<" && op != "=" && op != ">") {
+                            error("SYNTAX ERROR");
+                        }
+                        if (!scanner.hasMoreTokens()) {
+                            error("SYNTAX ERROR");
+                        }
+                        rhs = readE(scanner);
                         scanner.verifyToken("THEN");
                         if (!scanner.hasMoreTokens()) {
                             error("SYNTAX ERROR");
-                        } // 缺目标行
+                        }
                         int targetLine = stringToInteger(scanner.nextToken());
                         if (scanner.hasMoreTokens()) {
                             error("SYNTAX ERROR");
-                        } // 多了不该有的
+                        }
                         stmt = new IfStatement(lhs, op, rhs, targetLine);
                     } catch (ErrorException &ex) {
-                        delete exp;
+                        delete lhs;
+                        delete rhs;
+                        throw;
                     }
                 } else if (stmtToken == "END") {
                     stmt = new EndStatement();
