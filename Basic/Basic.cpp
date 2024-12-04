@@ -93,9 +93,7 @@ void processLine(std::string line, Program &program, EvalState &state) {
                         error("SYNTAX ERROR");
                     } // 缺目标行
                     int targetLine = stringToInteger(scanner.nextToken());
-                    /*if (program.getSourceLine(targetLine) == "") {
-                        error("LINE NUMBER ERROR");
-                    } // 目标行错误*/
+
                     if (scanner.hasMoreTokens()) {
                         error("SYNTAX ERROR");
                     } // 多了不该有的
@@ -103,22 +101,19 @@ void processLine(std::string line, Program &program, EvalState &state) {
                 } else if (stmtToken == "IF") {
                     if (!scanner.hasMoreTokens()) {
                         error("SYNTAX ERROR");
-                    }
-                    Expression *lhs = nullptr;
-                    Expression *rhs = nullptr;
+                    } // 缺表达式
+                    Expression *exp = nullptr;
                     try {
-                        lhs = readE(scanner);
+                        Expression *lhs = nullptr;
+                        Expression *rhs = nullptr;
+                        std::string op;
+                        exp = readE(scanner);
                         if (!scanner.hasMoreTokens()) {
                             error("SYNTAX ERROR");
-                        }
-                        std::string op = scanner.nextToken();
-                        if (op != "<" && op != "=" && op != ">") {
-                            error("SYNTAX ERROR");
-                        }
-                        if (!scanner.hasMoreTokens()) {
-                            error("SYNTAX ERROR");
-                        }
-                        rhs = readE(scanner);
+                        } // 缺跳转
+                        lhs = ((CompoundExp *) exp)->getLHS();
+                        rhs = ((CompoundExp *) exp)->getRHS();
+                        op = ((CompoundExp *) exp)->getOp();
                         scanner.verifyToken("THEN");
                         if (!scanner.hasMoreTokens()) {
                             error("SYNTAX ERROR");
@@ -129,9 +124,7 @@ void processLine(std::string line, Program &program, EvalState &state) {
                         }
                         stmt = new IfStatement(lhs, op, rhs, targetLine);
                     } catch (ErrorException &ex) {
-                        delete lhs;
-                        delete rhs;
-                        throw;
+                        delete exp;
                     }
                 } else if (stmtToken == "END") {
                     stmt = new EndStatement();
