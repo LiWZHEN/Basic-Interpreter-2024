@@ -16,7 +16,6 @@
 #include <unordered_map>
 #include "statement.hpp"
 
-
 class Statement;
 
 /*
