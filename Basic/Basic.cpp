@@ -102,9 +102,63 @@ void processLine(std::string line, Program &program, EvalState &state) {
                     if (!scanner.hasMoreTokens()) {
                         error("SYNTAX ERROR");
                     } // 缺表达式
-                    Expression *exp = nullptr;
                     try {
+                        std::string left;
+                        std::string op;
+                        std::string right;
+                        bool f_flag = false;
+                        bool left_flag = false;
+                        bool right_flag = false;
+                        for (char ch : line) {
+                            if (!f_flag) {
+                                if (ch == 'F') {
+                                    f_flag = true;
+                                }
+                                continue;
+                            }
+                            if (!left_flag && (ch == '=' || ch == '<' || ch == '>')) {
+                                left_flag = true;
+                                op = ch;
+                            } else if (!left_flag && ch != '=' && ch != '<' && ch != '>') {
+                                left += ch;
+                            } else if (left_flag) {
+                                right_flag = true;
+                                right += ch;
+                            }
+                        }
+                        if (!f_flag) { // 有用的东西啥也没有
+                            error("SYNTAX ERROR");
+                        }
+                        if (!left_flag) { // 没 = < > 运算符
+                            error("SYNTAX ERROR");
+                        }
+                        if (!right_flag) { // 没右边式子
+                            error("SYNTAX ERROR");
+                        }
+                        TokenScanner l;
+                        l.ignoreWhitespace();
+                        l.scanNumbers();
+                        l.setInput(left);
                         Expression *lhs = nullptr;
+                        lhs = readE(l);
+                        TokenScanner r;
+                        r.ignoreWhitespace();
+                        r.scanNumbers();
+                        r.setInput(right);
+                        Expression *rhs = nullptr;
+                        rhs = readE(r);
+                        if (!r.hasMoreTokens()) {
+                            error("SYNTAX ERROR");
+                        }
+                        r.verifyToken("THEN");
+                        if (!r.hasMoreTokens()) {
+                            error("SYNTAX ERROR");
+                        }
+                        int targetLine = stringToInteger(r.nextToken());
+                        if (r.hasMoreTokens()) {
+                            error("SYNTAX ERROR");
+                        }
+                        /*Expression *lhs = nullptr;
                         Expression *rhs = nullptr;
                         std::string op;
                         exp = readE(scanner);
@@ -121,10 +175,9 @@ void processLine(std::string line, Program &program, EvalState &state) {
                         int targetLine = stringToInteger(scanner.nextToken());
                         if (scanner.hasMoreTokens()) {
                             error("SYNTAX ERROR");
-                        }
+                        }*/
                         stmt = new IfStatement(lhs, op, rhs, targetLine);
                     } catch (ErrorException &ex) {
-                        delete exp;
                     }
                 } else if (stmtToken == "END") {
                     stmt = new EndStatement();
